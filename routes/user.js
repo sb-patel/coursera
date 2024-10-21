@@ -1,24 +1,59 @@
 const { Router } = require("express");
+const userRouter = Router();
+const z = require("zod");
+const bcrypt = require("bcrypt");
+
 const { userModel, purchaseModel, courseModel } = require("../database/db")
 const jwt = require("jsonwebtoken");
-const {JWT_USER_PASSWORD} = require("../config");
+const { JWT_USER_PASSWORD } = require("../config");
 
-const userRouter = Router();
+const userSchema = z.object({
+    email: z.string().email(),              // Must be a valid email
+    password: z.string().min(6),            // Minimum password length of 6 characters
+    firstName: z.string().min(1),           // First name must not be empty
+    lastName: z.string().min(1)             // Last name must not be empty
+});
+
 userRouter.post("/signup", async function (req, res) {
-    const { email, password, firstName, lastName } = req.body; // TODO: adding zod validation
-    // TODO: hash the password so plaintext pw is not stored in the DB
+    try {
+        // Validate the incoming data using Zod
+        const userData = userSchema.parse(req.body);
+    
+        const { email, password, firstName, lastName } = req.body;
+        
+        // Hash the password using bcrypt with a salt round of 10
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+        await userModel.create({
+            email: email,
+            password: hashedPassword,
+            firstName: firstName,
+            lastName: lastName
+        })
 
-    // TODO: Put inside a try catch block
-    await userModel.create({
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName
-    })
+        res.status(201).json({
+            message: "User created successfully !"
+        })
+    }
+    catch (error) {
+        console.log(error);
 
-    res.json({
-        message: "signup endpoint"
-    })
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                message: 'Validation error',
+                errors: error.errors
+            });
+        }
+
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'Email already exists' });
+        }
+
+        res.status(500).json({
+            "message": "Error creating a user",
+            "error": error.message
+        });
+    }
 })
 
 userRouter.post("/signin", async function (req, res) {
@@ -35,7 +70,7 @@ userRouter.post("/signin", async function (req, res) {
             message: "Incorrect credentials"
         })
     }
-    
+
     const token = jwt.sign({
         id: user._id,
     }, JWT_USER_PASSWORD);
