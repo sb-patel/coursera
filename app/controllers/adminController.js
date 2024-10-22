@@ -2,7 +2,9 @@ const z = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { JWT_ADMIN_PASSWORD } = require("../../config");
-const { adminModel } = require("../../database/models/adminModle")
+const { adminModel } = require("../../database/models/adminModle");
+const { courseModel } = require("../../database/models/courseModle");
+const { courseSchema } = require("../../database/schema/courseSchema");
 const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
 
 
@@ -88,7 +90,40 @@ async function signIn(req, res) {
     }
 }
 
+async function addCourse(req, res) {
+    try {
+        // Validate the incoming data using Zod
+        const courseData = courseSchema.parse(req.body);
+console.log('here');
+        await courseModel.create({
+            title : courseData.title,
+            description : courseData.description,
+            price : courseData.price,
+            imageUrl : courseData.imageUrl,
+            creatorId : courseData.creatorId
+        })
+
+        res.status(201).json({
+            message: "Course created successfully !"
+        })
+    }
+    catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                error: error.errors,
+                message: "Validation Error"
+            });
+        }
+
+        res.status(500).json({
+            error: error.message,
+            message: "Error during saving a course !"
+        })
+    }
+}
+
 module.exports = {
     signUp: signUp,
-    signIn: signIn
+    signIn: signIn,
+    addCourse: addCourse
 };
