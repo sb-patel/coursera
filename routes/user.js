@@ -3,26 +3,16 @@ const userRouter = Router();
 const z = require("zod");
 const bcrypt = require("bcrypt");
 
-const { userModel, purchaseModel, courseModel } = require("../database/db")
+const { userModel} = require("../models/userModule")
 const jwt = require("jsonwebtoken");
 const { JWT_USER_PASSWORD } = require("../config");
 
-const userSchema = z.object({
-    email: z.string().email(),              // Must be a valid email
-    password: z.string().min(6),            // Minimum password length of 6 characters
-    firstName: z.string().min(1),           // First name must not be empty
-    lastName: z.string().min(1)             // Last name must not be empty
-});
-
-const signinSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(6)
-});
+const {signUpSchema, signInSchema} = require("../schema/userSchema");
 
 userRouter.post("/signup", async function (req, res) {
     try {
         // Validate the incoming data using Zod
-        const userData = userSchema.parse(req.body);
+        const userData = signUpSchema.parse(req.body);
 
         const { email, password, firstName, lastName } = req.body;
 
@@ -61,7 +51,7 @@ userRouter.post("/signup", async function (req, res) {
 
 userRouter.post("/signin", async function (req, res) {
     try {
-        const signData = signinSchema.parse(req.body);
+        const signData = signInSchema.parse(req.body);
 
         const user = await userModel.findOne({ email : signData.email });
         if (!user) {
