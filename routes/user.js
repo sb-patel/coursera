@@ -14,16 +14,21 @@ const userSchema = z.object({
     lastName: z.string().min(1)             // Last name must not be empty
 });
 
+const signinSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6)
+});
+
 userRouter.post("/signup", async function (req, res) {
     try {
         // Validate the incoming data using Zod
         const userData = userSchema.parse(req.body);
-    
+
         const { email, password, firstName, lastName } = req.body;
-        
+
         // Hash the password using bcrypt with a salt round of 10
         const hashedPassword = await bcrypt.hash(userData.password, 10);
-    
+
         await userModel.create({
             email: email,
             password: hashedPassword,
@@ -36,8 +41,6 @@ userRouter.post("/signup", async function (req, res) {
         })
     }
     catch (error) {
-        console.log(error);
-
         if (error instanceof z.ZodError) {
             return res.status(400).json({
                 message: 'Validation error',
@@ -57,29 +60,45 @@ userRouter.post("/signup", async function (req, res) {
 })
 
 userRouter.post("/signin", async function (req, res) {
-    const { email, password } = req.body;
+    try {
+        const signData = signinSchema.parse(req.body);
 
-    // TODO: ideally password should be hashed, and hence you cant compare the user provided password and the database password
-    const user = await userModel.findOne({
-        email: email,
-        password: password
-    }); //[]
+        const user = await userModel.findOne({ email : signData.email });
+        if (!user) {
+            return res.status(400).json({
+                message: "User with no such email exists !"
+            })
+        }
 
-    if (!user) {
-        res.status(403).json({
-            message: "Incorrect credentials"
+        const isMatch = await bcrypt.compare(signData.password.trim(), user.password);
+        if(!isMatch){
+            return res.status(400).json({
+                "message" : "Invalid email or password"
+            });
+        }
+
+        const token = jwt.sign({
+            id: user._id,
+        }, JWT_USER_PASSWORD);
+
+        res.json({
+            message: 'Login successful',
+            token: token
         })
     }
+    catch (error) {
+        if(error instanceof z.ZodError){
+            return res.status(400).json({
+                message : 'Validation Error',
+                errors : error.errors
+            });
+        }
 
-    const token = jwt.sign({
-        id: user._id,
-    }, JWT_USER_PASSWORD);
-
-    // Do cookie logic
-
-    res.json({
-        token: token
-    })
+        res.status(500).json({
+            message : "Error during login",
+            error : error.message
+        })
+    }
 })
 
 userRouter.get("/purchases", function (req, res) {
