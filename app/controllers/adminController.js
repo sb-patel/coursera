@@ -6,6 +6,7 @@ const { adminModel } = require("../../database/models/adminModle");
 const { courseModel } = require("../../database/models/courseModle");
 const { courseSchema } = require("../../database/schema/courseSchema");
 const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
+const { ObjectId } = require('mongoose').Types;  // For validating ObjectId
 
 
 async function signUp(req, res) {
@@ -66,9 +67,14 @@ async function signIn(req, res) {
             });
         }
 
-        const token = jwt.sign({
-            id: admin._id,
-        }, JWT_ADMIN_PASSWORD);
+        const token = jwt.sign(
+            {
+                id: admin._id,
+                role: "admin"
+            },
+            JWT_ADMIN_PASSWORD,
+            { expiresIn: '1h' }
+        );
 
         res.json({
             message: 'Login successful',
@@ -92,15 +98,14 @@ async function signIn(req, res) {
 
 async function addCourse(req, res) {
     try {
-        // Validate the incoming data using Zod
         const courseData = courseSchema.parse(req.body);
-console.log('here');
+
         await courseModel.create({
-            title : courseData.title,
-            description : courseData.description,
-            price : courseData.price,
-            imageUrl : courseData.imageUrl,
-            creatorId : courseData.creatorId
+            title: courseData.title,
+            description: courseData.description,
+            price: courseData.price,
+            imageUrl: courseData.imageUrl,
+            creatorId: courseData.creatorId
         })
 
         res.status(201).json({
@@ -122,8 +127,70 @@ console.log('here');
     }
 }
 
+async function updateCourse(req, res) {
+    const { courseId } = req.params;
+
+    if (!ObjectId.isValid(courseId)) {
+        return res.status(400).json({ message: 'Invalid Course ID' });
+    }
+
+    const courseUpdateSchema = z.object({
+        title: z.string().min(1),
+        description: z.string().min(1),
+        price: z.number().min(1),
+        imageUrl: z.string().min(1)
+    });
+
+    try {
+        const courseData = courseUpdateSchema.parse(req.body);
+
+        const course = await courseModel.findById(courseId);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Compare userId from JWT with creatorId of the course
+        if (course.creatorId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Unauthorized to update this course' });
+        }
+
+        const updatedCourse = await courseModel.findByIdAndUpdate(
+            courseId,
+            {
+                $set: {
+                    title: courseData.title,
+                    description: courseData.description,
+                    price: courseData.price,
+                    imageUrl: courseData.imageUrl
+                }
+            },
+            { new: true }  // Return the updated document
+        )
+
+        res.status(200).json({
+            message: "Course updated successfully !",
+            course: updatedCourse
+        })
+    }
+    catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({
+                error: error.errors,
+                message: "Validation Error"
+            });
+        }
+
+        res.status(500).json({
+            error: error.message,
+            message: "Error during updating a course !"
+        })
+    }
+}
+
 module.exports = {
     signUp: signUp,
     signIn: signIn,
-    addCourse: addCourse
+    addCourse: addCourse,
+    updateCourse: updateCourse
 };

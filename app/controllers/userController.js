@@ -66,6 +66,7 @@ async function signIn(req, res) {
 
         const token = jwt.sign({
             id: user._id,
+            role: "user"
         }, JWT_USER_PASSWORD);
 
         res.json({
