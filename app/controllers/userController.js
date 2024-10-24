@@ -2,7 +2,8 @@ const z = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { JWT_USER_PASSWORD } = require("../../config");
-const { userModel } = require("../../database/models/userModle")
+const { userModel } = require("../../database/models/user");
+const { purchaseModel } = require("../../database/models/purchase");
 const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
 
 
@@ -25,7 +26,7 @@ async function signUp(req, res) {
 
         res.status(201).json({
             message: "User created successfully !"
-        })
+        });
     }
     catch (error) {
         if (error instanceof z.ZodError) {
@@ -89,7 +90,26 @@ async function signIn(req, res) {
     }
 }
 
+async function purchases(req, res) {
+    const userId = req.user.id;
+    try {
+        const purchases = await purchaseModel.find({ userId });
+
+        if (!purchases || purchases.length === 0) {
+            return res.status(404).json({
+                message: "No purchases found",
+            });
+        }
+
+        res.status(200).json(purchases);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching purchases', error: error.message });
+    }
+}
+
 module.exports = {
     signUp: signUp,
-    signIn: signIn
+    signIn: signIn,
+    purchases: purchases
 };
