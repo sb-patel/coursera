@@ -1,12 +1,12 @@
 const z = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { ObjectId } = require('mongoose').Types;
 const { JWT_ADMIN_PASSWORD } = require("../../config");
 const { adminModel } = require("../../database/models/admin");
 const { courseModel } = require("../../database/models/course");
 const { courseSchema } = require("../../database/schema/courseSchema");
 const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
-const { ObjectId } = require('mongoose').Types;  // For validating ObjectId
 
 
 async function signUp(req, res) {
@@ -106,11 +106,11 @@ async function addCourse(req, res) {
             price: courseData.price,
             imageUrl: courseData.imageUrl,
             creatorId: courseData.creatorId
-        })
+        });
 
         res.status(201).json({
             message: "Course created successfully !"
-        })
+        });
     }
     catch (error) {
         if (error instanceof z.ZodError) {
@@ -123,7 +123,7 @@ async function addCourse(req, res) {
         res.status(500).json({
             error: error.message,
             message: "Error during saving a course !"
-        })
+        });
     }
 }
 

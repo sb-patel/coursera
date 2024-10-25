@@ -1,18 +1,11 @@
 const { Router } = require("express");
 const courseRouter = Router();
+const { purchase, preview } = require("../app/controllers/courseController");
+const { authMiddleware } = require("../app/middleware/authMiddleware");
 
-courseRouter.post("/purchase", function(req, res) {
-    // you would expect the user to pay you money
-    res.json({
-        message: "purchase endpoint"
-    })
-})
+courseRouter.post("/purchase/:courseId", authMiddleware, purchase);
 
-courseRouter.get("/preview", function(req, res) {
-    res.json({
-        message: "course preview endpoint"
-    });
-})
+courseRouter.get("/preview", authMiddleware, preview);
 
 module.exports = {
     courseRouter: courseRouter

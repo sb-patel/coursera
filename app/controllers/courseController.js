@@ -1,0 +1,50 @@
+const z = require("zod");
+const { ObjectId } = require("mongoose").Types;
+const { purchaseModel } = require("../../database/models/purchase");
+const { courseModel } = require("../../database/models/course");
+
+async function purchase(req, res) {
+    try {
+        const { courseId } = req.params;
+
+        if (!ObjectId.isValid(courseId)) {
+            return res.status(400).json({ message: 'Invalid Course ID' });
+        }
+
+        const course = await courseModel.find({ courseId });
+
+        if(!course || course.length === 0){
+            return res.status(404).json({
+                message: "No course found",
+            });
+        };
+
+        const userId = req.user.id;
+
+        await purchaseModel.create({
+            userId,
+            courseId
+        });
+
+        res.status(201).json({
+            message: "Course Purchased successfully !"
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message,
+            message: "Error during purchasing a course !"
+        });
+    }
+}
+
+async function preview(req, res) {
+    res.json({
+        message: "preview endpoint"
+    })
+}
+
+module.exports = {
+    purchase: purchase,
+    preview: preview
+};
