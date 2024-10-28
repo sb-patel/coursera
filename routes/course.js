@@ -5,7 +5,7 @@ const { authMiddleware } = require("../app/middleware/authMiddleware");
 
 courseRouter.post("/purchase/:courseId", authMiddleware, purchase);
 
-courseRouter.get("/preview", authMiddleware, preview);
+courseRouter.get("/preview/:courseId", authMiddleware, preview);
 
 module.exports = {
     courseRouter: courseRouter
