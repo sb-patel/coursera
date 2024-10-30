@@ -11,12 +11,6 @@ adminRouter.post("/course", adminMiddleware, adminController.addCourse);
 
 adminRouter.put("/course/:courseId", adminMiddleware, adminController.updateCourse);
 
-adminRouter.get("/course/bulk", function (req, res) {
-    res.json({
-        message: "signup endpoint"
-    })
-});
-
 module.exports = {
     adminRouter: adminRouter
 };

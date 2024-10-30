@@ -55,7 +55,7 @@ async function preview(req, res) {
             });
         };
 
-        res.status(201).json({
+        res.status(200).json({
             message: "Course retrieved successfully !",
             data : course
         });
@@ -68,7 +68,24 @@ async function preview(req, res) {
     }
 }
 
+async function list(req, res) {
+    try{
+        const courses = await courseModel.find();
+        res.json({
+            message: "Course retrieved successfully !",
+            data : courses
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            error:error.message,
+            message: "Error while fetching courses !"
+        })
+    }
+}
+
 module.exports = {
     purchase: purchase,
-    preview: preview
+    preview: preview,
+    list: list
 };
