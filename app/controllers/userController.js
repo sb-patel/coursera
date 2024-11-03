@@ -96,6 +96,7 @@ async function purchases(req, res) {
         const purchases = await purchaseModel.find({ userId });
 
         if (!purchases || purchases.length === 0) {
+            console.log('no purchases');
             return res.status(404).json({
                 message: "No purchases found",
             });

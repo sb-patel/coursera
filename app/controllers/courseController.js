@@ -13,7 +13,7 @@ async function purchase(req, res) {
 
         const course = await courseModel.find({ courseId });
 
-        if(!course || course.length === 0){
+        if (!course || course.length === 0) {
             return res.status(404).json({
                 message: "No course found",
             });
@@ -39,12 +39,53 @@ async function purchase(req, res) {
 }
 
 async function preview(req, res) {
-    res.json({
-        message: "preview endpoint"
-    })
+    try {
+        const { courseId } = req.params;
+
+        if (!ObjectId.isValid(courseId)) {
+            return res.status(400).json({ message: 'Invalid Course ID' });
+        }
+
+        const course = await courseModel.findById(courseId);
+        // const course = await courseModel.findOne({ '_id':courseId});
+
+        if (!course || course.length === 0) {
+            return res.status(404).json({
+                message: "No course found",
+            });
+        };
+
+        res.status(200).json({
+            message: "Course retrieved successfully !",
+            data : course
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message,
+            message: "Error while fetching a course !"
+        });
+    }
+}
+
+async function list(req, res) {
+    try{
+        const courses = await courseModel.find();
+        res.json({
+            message: "Course retrieved successfully !",
+            data : courses
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            error:error.message,
+            message: "Error while fetching courses !"
+        })
+    }
 }
 
 module.exports = {
     purchase: purchase,
-    preview: preview
+    preview: preview,
+    list: list
 };

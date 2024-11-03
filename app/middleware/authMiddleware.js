@@ -32,6 +32,7 @@ function authMiddleware(req, res, next) {
             else {
                 message = 'Token verification failed';
             }
+
             res.status(403).json({
                 message,
                 error

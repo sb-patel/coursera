@@ -188,9 +188,34 @@ async function updateCourse(req, res) {
     }
 }
 
+async function list(req, res) {
+    try{
+        const userId = req.user.id;
+        const courses = await courseModel.find({'creatorId' : userId});
+
+        if(!courses || courses.length === 0){
+            res.status(404).json({
+                message: "No course found !",
+                data : courses
+            });
+        }
+        res.json({
+            message: "Course retrieved successfully !",
+            data : courses
+        });
+    }
+    catch(error){
+        res.status(500).json({
+            error:error.message,
+            message: "Error while fetching courses !"
+        })
+    }
+}
+
 module.exports = {
     signUp: signUp,
     signIn: signIn,
     addCourse: addCourse,
-    updateCourse: updateCourse
+    updateCourse: updateCourse,
+    list: list
 };
