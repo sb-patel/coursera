@@ -1,12 +1,14 @@
 require('dotenv').config();
-const express = require('express')
+const express = require('express');
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 const { userRouter } = require('./routes/user');
 const { adminRouter } = require('./routes/admin');
 const { courseRouter } = require('./routes/course');
 
 const app = express()
+app.use(cors()); // Enable CORS for all routes in development
 app.use(express.json());
 
 const port = 3000
