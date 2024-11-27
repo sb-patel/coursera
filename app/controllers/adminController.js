@@ -62,7 +62,7 @@ async function signIn(req, res) {
 
         const isMatch = await bcrypt.compare(signData.password.trim(), admin.password);
         if (!isMatch) {
-            return res.status(400).json({
+            return res.status(401).json({
                 "message": "Invalid email or password"
             });
         }
@@ -137,7 +137,9 @@ async function updateCourse(req, res) {
     const courseUpdateSchema = z.object({
         title: z.string().min(1),
         description: z.string().min(1),
-        price: z.number().min(1),
+        price: z.string()
+                .transform((val) => Number(val)) // Convert string to number
+                .refine((val) => !isNaN(val) && val >= 1, { message: "Price must be a number and at least 1" }),
         imageUrl: z.string().min(1)
     });
 
@@ -188,6 +190,39 @@ async function updateCourse(req, res) {
     }
 }
 
+async function deleteCourse(req, res) {
+    const { courseId } = req.params;
+
+    if (!ObjectId.isValid(courseId)) {
+        return res.status(400).json({ message: 'Invalid Course ID' });
+    }
+
+    try {
+        const course = await courseModel.findById(courseId);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Compare userId from JWT with creatorId of the course
+        if (course.creatorId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Unauthorized to update this course' });
+        }
+
+        await courseModel.findByIdAndDelete(courseId);
+
+        res.status(200).json({
+            message: "Course removed successfully !"
+        })
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message,
+            message: "Error during removing a course !"
+        })
+    }
+}
+
 async function list(req, res) {
     try{
         const userId = req.user.id;
@@ -217,5 +252,6 @@ module.exports = {
     signIn: signIn,
     addCourse: addCourse,
     updateCourse: updateCourse,
+    deleteCourse: deleteCourse,
     list: list
 };

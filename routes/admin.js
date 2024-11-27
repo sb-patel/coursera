@@ -11,6 +11,8 @@ adminRouter.post("/course", adminMiddleware, adminController.addCourse);
 
 adminRouter.put("/course/:courseId", adminMiddleware, adminController.updateCourse);
 
+adminRouter.delete("/course/:courseId", adminMiddleware, adminController.deleteCourse);
+
 adminRouter.get("/list", adminMiddleware, adminController.list);
 
 module.exports = {
