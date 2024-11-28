@@ -99,17 +99,19 @@ async function signIn(req, res) {
 async function addCourse(req, res) {
     try {
         const courseData = courseSchema.parse(req.body);
+        const creatorId = req.user.id; 
 
-        await courseModel.create({
+        const newCourse = await courseModel.create({
             title: courseData.title,
             description: courseData.description,
             price: courseData.price,
             imageUrl: courseData.imageUrl,
-            creatorId: courseData.creatorId
+            creatorId: creatorId
         });
 
         res.status(201).json({
-            message: "Course created successfully !"
+            message: "Course created successfully !",
+            course: newCourse
         });
     }
     catch (error) {
