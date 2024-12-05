@@ -24,7 +24,7 @@ declare global {
 }
 
 // Define the shape of a course
-interface Course {
+interface Purchase {
     _id: string;
     title: string;
     description: string;
