@@ -1,36 +1,40 @@
-const z = require("zod");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { JWT_USER_PASSWORD } = require("../../config");
-const { userModel } = require("../../database/models/user");
-const { purchaseModel } = require("../../database/models/purchase");
-const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
-
+import { z } from "zod";
 import { Request, Response } from "express";
+import { userModel, UserDocument } from "../../database/models/user";
+import { purchaseModel, PurchaseDocument } from "../../database/models/purchase";
+import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken";
+import JWT_KEYS from "../../config";
 
-interface Course {
-    _id: string;
-    userId: string;
-    courseId: string;
-    createdAt?: Date; // Optional
-}
+
+const signUpSchema = z.object({
+    email: z.string().email(),              // Must be a valid email
+    password: z.string().min(6),            // Minimum password length of 6 characters
+    firstName: z.string().min(1),           // First name must not be empty
+    lastName: z.string().min(1)             // Last name must not be empty
+});
+
+const signInSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6)
+});
 
 async function signUp(req: Request, res: Response) {
     try {
         // Validate the incoming data using Zod
         const userData = signUpSchema.parse(req.body);
 
-        const { email, password, firstName, lastName } = req.body;
+        const { email, password, firstName, lastName } = userData;
 
         // Hash the password using bcrypt with a salt round of 10
         const hashedPassword = await bcrypt.hash(userData.password, 10);
 
         await userModel.create({
-            email: email,
+            email: userData.email,
             password: hashedPassword,
             firstName: firstName,
             lastName: lastName
-        })
+        });
 
         res.status(201).json({
             message: "User created successfully !"
@@ -44,13 +48,13 @@ async function signUp(req: Request, res: Response) {
             });
         }
 
-        if (error.code === 11000) {
+        if (error instanceof Error && (error as any).code === 11000) {
             return res.status(400).json({ message: 'Email already exists' });
         }
 
         res.status(500).json({
             "message": "Error creating a user",
-            "error": error.message
+            error: error instanceof Error ? error.message : "Unknown Error"
         });
     }
 }
@@ -59,24 +63,30 @@ async function signIn(req: Request, res: Response) {
     try {
         const signData = signInSchema.parse(req.body);
 
-        const user = await userModel.findOne({ email: signData.email });
+        const user: UserDocument | null = await userModel.findOne({ email: signData.email });
         if (!user) {
             return res.status(400).json({
                 message: "User with no such email exists !"
             })
         }
 
-        const isMatch = await bcrypt.compare(signData.password.trim(), user.password);
+        const isMatch: boolean = await bcrypt.compare(signData.password.trim(), user.password);
         if (!isMatch) {
             return res.status(400).json({
                 "message": "Invalid email or password"
             });
         }
 
-        const token = jwt.sign({
+        if(!JWT_KEYS.JWT_USER_PASSWORD){
+            return res.status(400).json({
+                "message": "No encryption key is provided"
+            });
+        }
+
+        const token: string = jwt.sign({
             id: user._id,
             role: "user"
-        }, JWT_USER_PASSWORD);
+        }, JWT_KEYS.JWT_USER_PASSWORD);
 
         res.json({
             message: 'Login successful',
@@ -93,7 +103,7 @@ async function signIn(req: Request, res: Response) {
 
         res.status(500).json({
             message: "Error during login",
-            error: error.message
+            error: error instanceof Error ? error.message : "Unknown Error"
         })
     }
 }
@@ -107,9 +117,9 @@ async function purchases(req: Request, res: Response) {
 
     const userId = req.user.id;
     try {
-        const purchases: Course = await purchaseModel.find({ userId });
+        const purchases: PurchaseDocument[] = await purchaseModel.find({ userId });
 
-        if (!purchases) {
+        if (!purchases || purchases.length === 0) {
             return res.status(404).json({
                 message: "No purchases found",
             });

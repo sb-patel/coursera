@@ -1,15 +1,11 @@
 import { z } from "zod";
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-// const { ObjectId } = require('mongoose').Types;
-const { JWT_ADMIN_PASSWORD } = require("../../config");
-import { adminModel, AdminDocument } from "../../database/models/admin";
-const { courseModel } = require("../../database/models/course");
-// const { courseSchema } = require("../../database/schema/courseSchema");
-// const { signUpSchema, signInSchema } = require("../../database/schema/userSchema");
-
-import { Request, Response } from "express"
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
+import JWT_KEYS from "../../config";
+import { Request, Response } from "express"
+import { adminModel, AdminDocument } from "../../database/models/admin";
+import { courseModel, courseDocument } from "../../database/models/course";
 
 declare global {
     namespace Express {
@@ -55,7 +51,7 @@ const courseSchema = z.object({
 
 // Define the TypeScript type for the request body based on the Zod schema
 type SignUpData = z.infer<typeof signUpSchema>;
-type SignData = z.infer<typeof signInSchema>;
+type SignInData = z.infer<typeof signInSchema>;
 type CourseData = {
     title: string;
     description: string;
@@ -115,7 +111,7 @@ async function signUp(req: Request, res: Response) {
 
 async function signIn(req: Request, res: Response) {
     try {
-        const signData: SignData = signInSchema.parse(req.body);
+        const signData: SignInData = signInSchema.parse(req.body);
 
         const admin: AdminDocument | null = await adminModel.findOne({ email: signData.email });
         if (!admin) {
@@ -136,7 +132,7 @@ async function signIn(req: Request, res: Response) {
                 id: admin._id,
                 role: "admin"
             },
-            JWT_ADMIN_PASSWORD,
+            JWT_KEYS.JWT_ADMIN_PASSWORD,
             { expiresIn: '1h' }
         );
 
@@ -169,9 +165,9 @@ async function addCourse(req: Request, res: Response) {
 
         const creatorId: string = req.user.id;
 
-        const courseData: CourseData = courseSchema.parse(req.body);
+        const courseData = courseSchema.parse(req.body);
 
-        const newCourse: CourseData = await courseModel.create({
+        const newCourse: courseDocument = await courseModel.create({
             ...courseData,
             creatorId: creatorId
         });
@@ -217,9 +213,9 @@ async function updateCourse(req: Request, res: Response) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
             return; 
         }
-        const courseData: CourseData = courseUpdateSchema.parse(req.body);
+        const courseData = courseUpdateSchema.parse(req.body);
 
-        const course: CourseData = await courseModel.findById(courseId);
+        const course: courseDocument | null = await courseModel.findById(courseId);
 
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
@@ -230,7 +226,7 @@ async function updateCourse(req: Request, res: Response) {
             return res.status(403).json({ message: 'Unauthorized to update this course' });
         }
 
-        const updatedCourse: CourseData = await courseModel.findByIdAndUpdate(
+        const updatedCourse: courseDocument | null = await courseModel.findByIdAndUpdate(
             courseId,
             {
                 $set: {
