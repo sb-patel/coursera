@@ -20,9 +20,9 @@ const config_1 = require("../../config");
 const user_1 = require("../../database/models/user");
 const purchase_1 = require("../../database/models/purchase");
 const signUpSchema = zod_1.z.object({
-    email: zod_1.z.string().email(), // Must be a valid email
-    password: zod_1.z.string().min(6), // Minimum password length of 6 characters
-    firstName: zod_1.z.string().min(1), // First name must not be empty
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(6),
+    firstName: zod_1.z.string().min(1),
     lastName: zod_1.z.string().min(1) // Last name must not be empty
 });
 const signInSchema = zod_1.z.object({
@@ -46,21 +46,25 @@ function signUp(req, res) {
             res.status(201).json({
                 message: "User created successfully !"
             });
+            return;
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'Validation error',
                     errors: error.errors
                 });
+                return;
             }
             if (error instanceof Error && error.code === 11000) {
-                return res.status(400).json({ message: 'Email already exists' });
+                res.status(400).json({ message: 'Email already exists' });
+                return;
             }
             res.status(500).json({
                 "message": "Error creating a user",
                 error: error instanceof Error ? error.message : "Unknown Error"
             });
+            return;
         }
     });
 }
@@ -71,20 +75,23 @@ function signIn(req, res) {
             const signData = signInSchema.parse(req.body);
             const user = yield user_1.userModel.findOne({ email: signData.email });
             if (!user) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: "User with no such email exists !"
                 });
+                return;
             }
             const isMatch = yield bcrypt_1.default.compare(signData.password.trim(), user.password);
             if (!isMatch) {
-                return res.status(400).json({
+                res.status(400).json({
                     "message": "Invalid email or password"
                 });
+                return;
             }
             if (!config_1.JWT_USER_PASSWORD) {
-                return res.status(400).json({
+                res.status(400).json({
                     "message": "No encryption key is provided"
                 });
+                return;
             }
             const token = jsonwebtoken_1.default.sign({
                 id: user._id,
@@ -94,18 +101,21 @@ function signIn(req, res) {
                 message: 'Login successful',
                 token: token
             });
+            return;
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'Validation Error',
                     errors: error.errors
                 });
+                return;
             }
             res.status(500).json({
                 message: "Error during login",
                 error: error instanceof Error ? error.message : "Unknown Error"
             });
+            return;
         }
     });
 }
@@ -113,22 +123,26 @@ exports.signIn = signIn;
 function purchases(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!req.user || !req.user.id) {
-            return res.status(401).json({
+            res.status(401).json({
                 message: "Unauthorized: User ID is missing"
             });
+            return;
         }
         const userId = req.user.id;
         try {
             const purchases = yield purchase_1.purchaseModel.find({ userId });
             if (!purchases || purchases.length === 0) {
-                return res.status(404).json({
+                res.status(404).json({
                     message: "No purchases found",
                 });
+                return;
             }
             res.status(200).json(purchases);
+            return;
         }
         catch (error) {
             res.status(500).json({ message: 'Error fetching purchases', error: error instanceof Error ? error.message : "Unknown Error" });
+            return;
         }
     });
 }

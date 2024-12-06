@@ -1,16 +1,18 @@
 import jwt from "jsonwebtoken"
-import { JWT_USER_PASSWORD, JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response, NextFunction } from "express";
+import { JWT_USER_PASSWORD, JWT_ADMIN_PASSWORD } from "../../config";
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided !" });
+        res.status(401).json({ message: "Access denied. No token provided !" });
+        return;
     }
 
     if(!JWT_USER_PASSWORD || !JWT_ADMIN_PASSWORD){
-        return res.status(401).json({ message: "Secret is not provided !" });
+        res.status(401).json({ message: "Secret is not provided !" });
+        return;
     }
 
     try {

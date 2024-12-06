@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.list = exports.updateCourse = exports.addCourse = exports.signIn = exports.signUp = void 0;
+exports.list = exports.deleteCourse = exports.updateCourse = exports.addCourse = exports.signIn = exports.signUp = void 0;
 const zod_1 = require("zod");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -21,13 +21,13 @@ const config_1 = require("../../config");
 const admin_1 = require("../../database/models/admin");
 const course_1 = require("../../database/models/course");
 const signUpSchema = zod_1.z.object({
-    email: zod_1.z.string().email(), // Must be a valid email
-    password: zod_1.z.string().min(6), // Minimum password length of 6 characters
-    firstName: zod_1.z.string().min(1, "First name is required"), // First name must not be empty
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(6),
+    firstName: zod_1.z.string().min(1, "First name is required"),
     lastName: zod_1.z.string().min(1) // Last name must not be empty
 });
 const signInSchema = zod_1.z.object({
-    email: zod_1.z.string().email(), // Must be a valid email
+    email: zod_1.z.string().email(),
     password: zod_1.z.string().min(6) // Minimum password length of 6 characters
 });
 const courseSchema = zod_1.z.object({
@@ -63,13 +63,15 @@ function signUp(req, res) {
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'Validation error',
                     errors: error.errors
                 });
+                return;
             }
             if (error instanceof Error && error.code === 11000) {
-                return res.status(400).json({ message: 'Email already exists' });
+                res.status(400).json({ message: 'Email already exists' });
+                return;
             }
             res.status(500).json({
                 "message": "Error creating a admin",
@@ -85,20 +87,23 @@ function signIn(req, res) {
             const signData = signInSchema.parse(req.body);
             const admin = yield admin_1.adminModel.findOne({ email: signData.email });
             if (!admin) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: "Admin with no such email exists !"
                 });
+                return;
             }
             const isMatch = yield bcrypt_1.default.compare(signData.password.trim(), admin.password);
             if (!isMatch) {
-                return res.status(401).json({
+                res.status(401).json({
                     "message": "Invalid email or password"
                 });
+                return;
             }
             if (!config_1.JWT_ADMIN_PASSWORD) {
-                return res.status(401).json({
+                res.status(401).json({
                     "message": "Admin secret not provided"
                 });
+                return;
             }
             const token = jsonwebtoken_1.default.sign({
                 id: admin._id,
@@ -111,10 +116,11 @@ function signIn(req, res) {
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'Validation Error',
                     errors: error.errors
                 });
+                return;
             }
             res.status(500).json({
                 message: "Error during login",
@@ -141,10 +147,11 @@ function addCourse(req, res) {
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     error: error.errors,
                     message: "Validation Error"
                 });
+                return;
             }
             res.status(500).json({
                 error: error instanceof Error ? error.message : "Unknown Error",
@@ -158,7 +165,8 @@ function updateCourse(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { courseId } = req.params;
         if (!mongoose_1.Types.ObjectId.isValid(courseId)) {
-            return res.status(400).json({ message: 'Invalid Course ID' });
+            res.status(400).json({ message: 'Invalid Course ID' });
+            return;
         }
         const courseUpdateSchema = zod_1.z.object({
             title: zod_1.z.string().min(1),
@@ -176,11 +184,13 @@ function updateCourse(req, res) {
             const courseData = courseUpdateSchema.parse(req.body);
             const course = yield course_1.courseModel.findById(courseId);
             if (!course) {
-                return res.status(404).json({ message: 'Course not found' });
+                res.status(404).json({ message: 'Course not found' });
+                return;
             }
             // Compare userId from JWT with creatorId of the course
             if (!course.creatorId || course.creatorId.toString() !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized to update this course' });
+                res.status(403).json({ message: 'Unauthorized to update this course' });
+                return;
             }
             const updatedCourse = yield course_1.courseModel.findByIdAndUpdate(courseId, {
                 $set: {
@@ -198,10 +208,11 @@ function updateCourse(req, res) {
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
-                return res.status(400).json({
+                res.status(400).json({
                     error: error.errors,
                     message: "Validation Error"
                 });
+                return;
             }
             res.status(500).json({
                 error: error instanceof Error ? error.message : "Unknown Error",
@@ -211,6 +222,42 @@ function updateCourse(req, res) {
     });
 }
 exports.updateCourse = updateCourse;
+function deleteCourse(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { courseId } = req.params;
+        if (!mongoose_1.Types.ObjectId.isValid(courseId)) {
+            res.status(400).json({ message: 'Invalid Course ID' });
+            return;
+        }
+        try {
+            const course = yield course_1.courseModel.findById(courseId);
+            if (!course) {
+                res.status(404).json({ message: 'Course not found' });
+                return;
+            }
+            if (!req.user || !req.user.id) {
+                res.status(403).json({ message: 'User is not Authrorized' });
+                return;
+            }
+            // Compare userId from JWT with creatorId of the course
+            if (course.creatorId.toString() !== req.user.id) {
+                res.status(403).json({ message: 'Unauthorized to update this course' });
+                return;
+            }
+            yield course_1.courseModel.findByIdAndDelete(courseId);
+            res.status(200).json({
+                message: "Course removed successfully !"
+            });
+        }
+        catch (error) {
+            res.status(500).json({
+                error: error instanceof Error ? error.message : "Unknown Error",
+                message: "Error during removing a course !"
+            });
+        }
+    });
+}
+exports.deleteCourse = deleteCourse;
 function list(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -225,11 +272,13 @@ function list(req, res) {
                     message: "No course found !",
                     data: []
                 });
+                return;
             }
             res.json({
                 message: "Course retrieved successfully !",
                 data: courses
             });
+            return;
         }
         catch (error) {
             const errMessage = error instanceof Error ? error.message : "Unknown error";
@@ -237,6 +286,7 @@ function list(req, res) {
                 error: errMessage,
                 message: "Error while fetching courses !"
             });
+            return;
         }
     });
 }

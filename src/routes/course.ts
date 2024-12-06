@@ -1,14 +1,12 @@
-const { Router } = require("express");
+import { Router } from "express";
+import { authMiddleware } from "../app/middleware/authMiddleware";
+import * as courseController from "../app/controllers/courseController"
 const courseRouter = Router();
-const { purchase, preview, list } = require("../app/controllers/courseController");
-const { authMiddleware } = require("../app/middleware/authMiddleware");
 
-courseRouter.post("/purchase/:courseId", authMiddleware, purchase);
+courseRouter.post("/purchase/:courseId", authMiddleware, courseController.purchase);
 
-courseRouter.get("/preview/:courseId", authMiddleware, preview);
+courseRouter.get("/preview/:courseId", authMiddleware, courseController.preview);
 
-courseRouter.get("/list", authMiddleware, list);
+courseRouter.get("/list", authMiddleware, courseController.list);
 
-module.exports = {
-    courseRouter: courseRouter
-}
+export { courseRouter };

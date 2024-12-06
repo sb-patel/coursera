@@ -41,7 +41,7 @@ const courseSchema = z.object({
 type SignUpData = z.infer<typeof signUpSchema>;
 type SignInData = z.infer<typeof signInSchema>;
 
-export async function signUp(req: Request, res: Response): Promise<void | Response> {
+export async function signUp(req: Request, res: Response): Promise<void> {
     try {
         // Validate the incoming data using Zod
         const userData: SignUpData = signUpSchema.parse(req.body);
@@ -73,14 +73,16 @@ export async function signUp(req: Request, res: Response): Promise<void | Respon
     }
     catch (error: unknown) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: 'Validation error',
                 errors: error.errors
             });
+            return;
         }
 
         if (error instanceof Error && (error as any).code === 11000) {
-            return res.status(400).json({ message: 'Email already exists' });
+            res.status(400).json({ message: 'Email already exists' });
+            return;
         }
 
         res.status(500).json({
@@ -96,22 +98,25 @@ export async function signIn(req: Request, res: Response): Promise<void> {
 
         const admin: AdminDocument | null = await adminModel.findOne({ email: signData.email });
         if (!admin) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: "Admin with no such email exists !"
             })
+            return;
         }
 
         const isMatch: boolean = await bcrypt.compare(signData.password.trim(), admin.password);
         if (!isMatch) {
-            return res.status(401).json({
+            res.status(401).json({
                 "message": "Invalid email or password"
             });
+            return;
         }
 
         if(!JWT_ADMIN_PASSWORD){
-            return res.status(401).json({
+            res.status(401).json({
                 "message": "Admin secret not provided"
             });
+            return;
         }
 
         const token: string = jwt.sign(
@@ -130,10 +135,11 @@ export async function signIn(req: Request, res: Response): Promise<void> {
     }
     catch (error: unknown) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: 'Validation Error',
                 errors: error.errors
             });
+            return;
         }
 
         res.status(500).json({
@@ -166,10 +172,11 @@ export async function addCourse(req: Request, res: Response): Promise<void> {
     }
     catch (error: unknown) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: error.errors,
                 message: "Validation Error"
             });
+            return;
         }
 
         res.status(500).json({
@@ -183,7 +190,8 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
     const { courseId } = req.params;
 
     if (!Types.ObjectId.isValid(courseId)) {
-        return res.status(400).json({ message: 'Invalid Course ID' });
+        res.status(400).json({ message: 'Invalid Course ID' });
+        return;
     }
 
     const courseUpdateSchema = z.object({
@@ -205,12 +213,14 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
         const course: courseDocument | null = await courseModel.findById(courseId);
 
         if (!course) {
-            return res.status(404).json({ message: 'Course not found' });
+            res.status(404).json({ message: 'Course not found' });
+            return;
         }
 
         // Compare userId from JWT with creatorId of the course
         if (!course.creatorId || course.creatorId.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Unauthorized to update this course' });
+            res.status(403).json({ message: 'Unauthorized to update this course' });
+            return;
         }
 
         const updatedCourse: courseDocument | null = await courseModel.findByIdAndUpdate(
@@ -233,10 +243,11 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
     }
     catch (error: unknown) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: error.errors,
                 message: "Validation Error"
             });
+            return;
         }
 
         res.status(500).json({
@@ -250,22 +261,26 @@ export async function deleteCourse(req: Request, res: Response): Promise<void> {
     const { courseId } = req.params;
 
     if (!Types.ObjectId.isValid(courseId)) {
-        return res.status(400).json({ message: 'Invalid Course ID' });
+        res.status(400).json({ message: 'Invalid Course ID' });
+        return;
     }
 
     try {
         const course: courseDocument | null = await courseModel.findById(courseId);
 
         if (!course) {
-            return res.status(404).json({ message: 'Course not found' });
+            res.status(404).json({ message: 'Course not found' });
+            return;
         }
 
         if(!req.user || !req.user.id){
-            return res.status(403).json({ message: 'User is not Authrorized' });
+            res.status(403).json({ message: 'User is not Authrorized' });
+            return;
         }
         // Compare userId from JWT with creatorId of the course
         if (course.creatorId.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Unauthorized to update this course' });
+            res.status(403).json({ message: 'Unauthorized to update this course' });
+            return;
         }
 
         await courseModel.findByIdAndDelete(courseId);
@@ -297,11 +312,13 @@ export async function list(req: Request, res: Response): Promise<void> {
                 message: "No course found !",
                 data: []
             });
+            return;
         }
         res.json({
             message: "Course retrieved successfully !",
             data: courses
         });
+        return;
     }
     catch (error: unknown) {
         const errMessage = error instanceof Error ? error.message : "Unknown error";
@@ -309,6 +326,7 @@ export async function list(req: Request, res: Response): Promise<void> {
             error: errMessage,
             message: "Error while fetching courses !"
         })
+        return;
     }
 }
 

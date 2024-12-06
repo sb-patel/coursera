@@ -3,21 +3,24 @@ import { JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-export const adminMiddleware = (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const adminMiddleware = (req: Request, res: Response, next: NextFunction): void => {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided !" });
+        res.status(401).json({ message: "Access denied. No token provided !" });
+        return
     }
 
     try {
         if(!JWT_ADMIN_PASSWORD){
-            return res.status(401).json({ message: "Admin secret is missing !" });
+            res.status(401).json({ message: "Admin secret is missing !" });
+            return
         }
         const decoded = jwt.verify(token, JWT_ADMIN_PASSWORD) as { id: string; role: string };
 
         if (decoded.role !== 'admin') {
-            return res.status(403).json({ message: 'Access denied. Admins only.' });
+            res.status(403).json({ message: 'Access denied. Admins only.' });
+            return
         }
         req.user = decoded;
         next();
