@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { Request, Response } from "express";
-import { userModel, UserDocument } from "../../database/models/user";
-import { purchaseModel, PurchaseDocument } from "../../database/models/purchase";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
-import JWT_KEYS from "../../config";
+import { Request, Response } from "express";
+import { JWT_USER_PASSWORD } from "../../config";
+import { userModel, UserDocument } from "../../database/models/user";
+import { purchaseModel, purchaseDocument } from "../../database/models/purchase";
 
 
 const signUpSchema = z.object({
@@ -19,7 +19,7 @@ const signInSchema = z.object({
     password: z.string().min(6)
 });
 
-async function signUp(req: Request, res: Response) {
+export async function signUp(req: Request, res: Response) {
     try {
         // Validate the incoming data using Zod
         const userData = signUpSchema.parse(req.body);
@@ -59,7 +59,7 @@ async function signUp(req: Request, res: Response) {
     }
 }
 
-async function signIn(req: Request, res: Response) {
+export async function signIn(req: Request, res: Response) {
     try {
         const signData = signInSchema.parse(req.body);
 
@@ -77,7 +77,7 @@ async function signIn(req: Request, res: Response) {
             });
         }
 
-        if(!JWT_KEYS.JWT_USER_PASSWORD){
+        if(!JWT_USER_PASSWORD){
             return res.status(400).json({
                 "message": "No encryption key is provided"
             });
@@ -86,7 +86,7 @@ async function signIn(req: Request, res: Response) {
         const token: string = jwt.sign({
             id: user._id,
             role: "user"
-        }, JWT_KEYS.JWT_USER_PASSWORD);
+        }, JWT_USER_PASSWORD);
 
         res.json({
             message: 'Login successful',
@@ -108,7 +108,7 @@ async function signIn(req: Request, res: Response) {
     }
 }
 
-async function purchases(req: Request, res: Response) {
+export async function purchases(req: Request, res: Response) {
     if (!req.user || !req.user.id) {
         return res.status(401).json({
             message: "Unauthorized: User ID is missing"
@@ -117,7 +117,7 @@ async function purchases(req: Request, res: Response) {
 
     const userId = req.user.id;
     try {
-        const purchases: PurchaseDocument[] = await purchaseModel.find({ userId });
+        const purchases: purchaseDocument[] = await purchaseModel.find({ userId });
 
         if (!purchases || purchases.length === 0) {
             return res.status(404).json({
@@ -131,9 +131,3 @@ async function purchases(req: Request, res: Response) {
         res.status(500).json({ message: 'Error fetching purchases', error: error instanceof Error ? error.message : "Unknown Error" });
     }
 }
-
-module.exports = {
-    signUp: signUp,
-    signIn: signIn,
-    purchases: purchases
-};

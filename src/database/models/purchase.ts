@@ -1,16 +1,16 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
-export interface PurchaseDocument extends Document {
+export interface purchaseDocument extends Document {
     userId: mongoose.Types.ObjectId;
     courseId: mongoose.Types.ObjectId;
 }
 
-const purchaseSchema: Schema<PurchaseDocument> = new Schema({
+const purchaseSchema: Schema<purchaseDocument> = new Schema({
     userId: mongoose.Types.ObjectId,
     courseId: mongoose.Types.ObjectId,
 });
 
-export const purchaseModel: Model<PurchaseDocument> = mongoose.model<PurchaseDocument>(
+export const purchaseModel: Model<purchaseDocument> = mongoose.model<purchaseDocument>(
     "purchase",
     purchaseSchema
 );

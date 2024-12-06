@@ -8,23 +8,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.list = exports.updateCourse = exports.addCourse = exports.signIn = exports.signUp = void 0;
 const zod_1 = require("zod");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-// const { ObjectId } = require('mongoose').Types;
-const { JWT_ADMIN_PASSWORD } = require("../../config");
-const admin_1 = require("../../database/models/admin");
-const { courseModel } = require("../../database/models/course");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const mongoose_1 = require("mongoose");
+const config_1 = require("../../config");
+const admin_1 = require("../../database/models/admin");
+const course_1 = require("../../database/models/course");
 const signUpSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(6),
-    firstName: zod_1.z.string().min(1, "First name is required"),
+    email: zod_1.z.string().email(), // Must be a valid email
+    password: zod_1.z.string().min(6), // Minimum password length of 6 characters
+    firstName: zod_1.z.string().min(1, "First name is required"), // First name must not be empty
     lastName: zod_1.z.string().min(1) // Last name must not be empty
 });
 const signInSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
+    email: zod_1.z.string().email(), // Must be a valid email
     password: zod_1.z.string().min(6) // Minimum password length of 6 characters
 });
 const courseSchema = zod_1.z.object({
@@ -40,7 +43,7 @@ function signUp(req, res) {
             const userData = signUpSchema.parse(req.body);
             const { email, password, firstName, lastName } = userData;
             // Hash the password using bcrypt with a salt round of 10
-            const hashedPassword = yield bcrypt.hash(userData.password, 10);
+            const hashedPassword = yield bcrypt_1.default.hash(userData.password, 10);
             // await adminModel.create({
             //     email: email,
             //     password: hashedPassword,
@@ -75,6 +78,7 @@ function signUp(req, res) {
         }
     });
 }
+exports.signUp = signUp;
 function signIn(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -85,16 +89,21 @@ function signIn(req, res) {
                     message: "Admin with no such email exists !"
                 });
             }
-            const isMatch = yield bcrypt.compare(signData.password.trim(), admin.password);
+            const isMatch = yield bcrypt_1.default.compare(signData.password.trim(), admin.password);
             if (!isMatch) {
                 return res.status(401).json({
                     "message": "Invalid email or password"
                 });
             }
-            const token = jwt.sign({
+            if (!config_1.JWT_ADMIN_PASSWORD) {
+                return res.status(401).json({
+                    "message": "Admin secret not provided"
+                });
+            }
+            const token = jsonwebtoken_1.default.sign({
                 id: admin._id,
                 role: "admin"
-            }, JWT_ADMIN_PASSWORD, { expiresIn: '1h' });
+            }, config_1.JWT_ADMIN_PASSWORD, { expiresIn: '1h' });
             res.json({
                 message: 'Login successful',
                 token: token
@@ -114,6 +123,7 @@ function signIn(req, res) {
         }
     });
 }
+exports.signIn = signIn;
 function addCourse(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -123,7 +133,7 @@ function addCourse(req, res) {
             }
             const creatorId = req.user.id;
             const courseData = courseSchema.parse(req.body);
-            const newCourse = yield courseModel.create(Object.assign(Object.assign({}, courseData), { creatorId: creatorId }));
+            const newCourse = yield course_1.courseModel.create(Object.assign(Object.assign({}, courseData), { creatorId: creatorId }));
             res.status(201).json({
                 message: "Course created successfully !",
                 course: newCourse
@@ -143,6 +153,7 @@ function addCourse(req, res) {
         }
     });
 }
+exports.addCourse = addCourse;
 function updateCourse(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { courseId } = req.params;
@@ -163,7 +174,7 @@ function updateCourse(req, res) {
                 return;
             }
             const courseData = courseUpdateSchema.parse(req.body);
-            const course = yield courseModel.findById(courseId);
+            const course = yield course_1.courseModel.findById(courseId);
             if (!course) {
                 return res.status(404).json({ message: 'Course not found' });
             }
@@ -171,7 +182,7 @@ function updateCourse(req, res) {
             if (!course.creatorId || course.creatorId.toString() !== req.user.id) {
                 return res.status(403).json({ message: 'Unauthorized to update this course' });
             }
-            const updatedCourse = yield courseModel.findByIdAndUpdate(courseId, {
+            const updatedCourse = yield course_1.courseModel.findByIdAndUpdate(courseId, {
                 $set: {
                     title: courseData.title,
                     description: courseData.description,
@@ -199,6 +210,7 @@ function updateCourse(req, res) {
         }
     });
 }
+exports.updateCourse = updateCourse;
 function list(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -207,7 +219,7 @@ function list(req, res) {
                 return;
             }
             const userId = req.user.id;
-            const courses = yield courseModel.find({ 'creatorId': userId });
+            const courses = yield course_1.courseModel.find({ 'creatorId': userId });
             if (!courses || courses.length === 0) {
                 res.status(404).json({
                     message: "No course found !",
@@ -228,8 +240,9 @@ function list(req, res) {
         }
     });
 }
+exports.list = list;
 // module.exports = {
 //     signUp: signUp,
 //     list: list
 // };
-exports.default = { list, signUp, signIn };
+// export default { list, signUp, signIn };

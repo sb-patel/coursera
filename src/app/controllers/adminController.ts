@@ -2,7 +2,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
-import JWT_KEYS from "../../config";
+import { JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response } from "express"
 import { adminModel, AdminDocument } from "../../database/models/admin";
 import { courseModel, courseDocument } from "../../database/models/course";
@@ -17,17 +17,6 @@ declare global {
             };
         }
     }
-}
-
-// Define the shape of a course
-interface Purchase {
-    _id: string;
-    title: string;
-    description: string;
-    price: number;
-    creatorId: string;
-    imageUrl?: string; // Optional
-    createdAt?: Date; // Optional
 }
 
 const signUpSchema = z.object({
@@ -52,15 +41,8 @@ const courseSchema = z.object({
 // Define the TypeScript type for the request body based on the Zod schema
 type SignUpData = z.infer<typeof signUpSchema>;
 type SignInData = z.infer<typeof signInSchema>;
-type CourseData = {
-    title: string;
-    description: string;
-    price: number;
-    imageUrl: string;
-    creatorId?: string;
-};
 
-async function signUp(req: Request, res: Response) {
+export async function signUp(req: Request, res: Response) {
     try {
         // Validate the incoming data using Zod
         const userData: SignUpData = signUpSchema.parse(req.body);
@@ -109,7 +91,7 @@ async function signUp(req: Request, res: Response) {
     }
 }
 
-async function signIn(req: Request, res: Response) {
+export async function signIn(req: Request, res: Response) {
     try {
         const signData: SignInData = signInSchema.parse(req.body);
 
@@ -127,12 +109,18 @@ async function signIn(req: Request, res: Response) {
             });
         }
 
+        if(!JWT_ADMIN_PASSWORD){
+            return res.status(401).json({
+                "message": "Admin secret not provided"
+            });
+        }
+
         const token: string = jwt.sign(
             {
                 id: admin._id,
                 role: "admin"
             },
-            JWT_KEYS.JWT_ADMIN_PASSWORD,
+            JWT_ADMIN_PASSWORD,
             { expiresIn: '1h' }
         );
 
@@ -156,7 +144,7 @@ async function signIn(req: Request, res: Response) {
     }
 }
 
-async function addCourse(req: Request, res: Response) {
+export async function addCourse(req: Request, res: Response) {
     try {
         if (!req.user || !req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
@@ -192,7 +180,7 @@ async function addCourse(req: Request, res: Response) {
     }
 }
 
-async function updateCourse(req: Request, res: Response) {
+export async function updateCourse(req: Request, res: Response) {
     const { courseId } = req.params;
 
     if (!Types.ObjectId.isValid(courseId)) {
@@ -259,7 +247,7 @@ async function updateCourse(req: Request, res: Response) {
     }
 }
 
-async function list(req: Request, res: Response) {
+export async function list(req: Request, res: Response) {
     try {
         if (!req.user || req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
@@ -267,7 +255,7 @@ async function list(req: Request, res: Response) {
         }
 
         const userId: string = req.user.id;
-        const courses: Course[] = await courseModel.find({ 'creatorId': userId });
+        const courses: courseDocument[] = await courseModel.find({ 'creatorId': userId });
 
         if (!courses || courses.length === 0) {
             res.status(404).json({
@@ -294,4 +282,4 @@ async function list(req: Request, res: Response) {
 //     list: list
 // };
 
-export default { list, signUp, signIn };
+// export default { list, signUp, signIn };
