@@ -12,8 +12,7 @@ declare global {
         interface Request {
             user?: {
                 id: string;
-                name: string;
-                email: string;
+                role: string;
             };
         }
     }
@@ -42,7 +41,7 @@ const courseSchema = z.object({
 type SignUpData = z.infer<typeof signUpSchema>;
 type SignInData = z.infer<typeof signInSchema>;
 
-export async function signUp(req: Request, res: Response) {
+export async function signUp(req: Request, res: Response): Promise<void | Response> {
     try {
         // Validate the incoming data using Zod
         const userData: SignUpData = signUpSchema.parse(req.body);
@@ -91,7 +90,7 @@ export async function signUp(req: Request, res: Response) {
     }
 }
 
-export async function signIn(req: Request, res: Response) {
+export async function signIn(req: Request, res: Response): Promise<void> {
     try {
         const signData: SignInData = signInSchema.parse(req.body);
 
@@ -144,7 +143,7 @@ export async function signIn(req: Request, res: Response) {
     }
 }
 
-export async function addCourse(req: Request, res: Response) {
+export async function addCourse(req: Request, res: Response): Promise<void> {
     try {
         if (!req.user || !req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
@@ -180,7 +179,7 @@ export async function addCourse(req: Request, res: Response) {
     }
 }
 
-export async function updateCourse(req: Request, res: Response) {
+export async function updateCourse(req: Request, res: Response): Promise<void> {
     const { courseId } = req.params;
 
     if (!Types.ObjectId.isValid(courseId)) {
@@ -247,7 +246,43 @@ export async function updateCourse(req: Request, res: Response) {
     }
 }
 
-export async function list(req: Request, res: Response) {
+export async function deleteCourse(req: Request, res: Response): Promise<void> {
+    const { courseId } = req.params;
+
+    if (!Types.ObjectId.isValid(courseId)) {
+        return res.status(400).json({ message: 'Invalid Course ID' });
+    }
+
+    try {
+        const course: courseDocument | null = await courseModel.findById(courseId);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        if(!req.user || !req.user.id){
+            return res.status(403).json({ message: 'User is not Authrorized' });
+        }
+        // Compare userId from JWT with creatorId of the course
+        if (course.creatorId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Unauthorized to update this course' });
+        }
+
+        await courseModel.findByIdAndDelete(courseId);
+
+        res.status(200).json({
+            message: "Course removed successfully !"
+        })
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error instanceof Error ? error.message : "Unknown Error",
+            message: "Error during removing a course !"
+        })
+    }
+}
+
+export async function list(req: Request, res: Response): Promise<void> {
     try {
         if (!req.user || req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });

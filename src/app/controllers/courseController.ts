@@ -1,9 +1,9 @@
 import { Types } from "mongoose";
 import { Request, Response } from "express";
-import { purchaseModel, purchaseDocument } from "../../database/models/purchase";
 import { courseModel, courseDocument } from "../../database/models/course";
+import { purchaseModel } from "../../database/models/purchase";
 
-async function purchase(req: Request, res: Response) {
+export async function purchase(req: Request, res: Response) {
     try {
         const { courseId } = req.params;
 
@@ -43,7 +43,7 @@ async function purchase(req: Request, res: Response) {
     }
 }
 
-async function preview(req: Request, res: Response) {
+export async function preview(req: Request, res: Response) {
     try {
         const { courseId } = req.params;
 
@@ -73,7 +73,7 @@ async function preview(req: Request, res: Response) {
     }
 }
 
-async function list(req: Request, res: Response) {
+export async function list(req: Request, res: Response) {
     try{
         const courses: courseDocument[] = await courseModel.find();
         res.json({
@@ -88,9 +88,3 @@ async function list(req: Request, res: Response) {
         })
     }
 }
-
-module.exports = {
-    purchase: purchase,
-    preview: preview,
-    list: list
-};
