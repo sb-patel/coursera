@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,8 +9,43 @@ datasource db {
 
 model NewUser {
   id        String @id @default(auto()) @map("_id") @db.ObjectId
-  email     String @unique
-  password  String
+  email     String
   firstName String
-  lastName  String?
+  lastName  String
+  password  String
+}
+
+model admins {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  v         Int    @map("__v")
+  email     String @unique(map: "email_1")
+  firstName String
+  lastName  String
+  password  String
+}
+
+model courses {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  v           Int    @map("__v")
+  creatorId   String @db.ObjectId
+  description String
+  imageUrl    String
+  price       Int
+  title       String
+}
+
+model purchases {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  v        Int    @map("__v")
+  courseId String @db.ObjectId
+  userId   String @db.ObjectId
+}
+
+model users {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  v         Int    @map("__v")
+  email     String @unique(map: "email_1")
+  firstName String
+  lastName  String
+  password  String
 }
