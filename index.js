@@ -7,6 +7,7 @@ const { userRouter } = require('./routes/user');
 const { adminRouter } = require('./routes/admin');
 const { courseRouter } = require('./routes/course');
 
+
 const app = express()
 app.use(cors()); // Enable CORS for all routes in development
 app.use(express.json());
@@ -17,8 +18,8 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/course", courseRouter);
 
-async function main(){
-  try{
+async function main() {
+  try {
     await mongoose.connect(process.env.MONGO_URL);
     console.log(process.env.MONGO_URL);
 
@@ -26,7 +27,7 @@ async function main(){
       console.log(`Example app listening on port ${port}`)
     });
   }
-  catch(error){
+  catch (error) {
     console.log(error);
   }
 };

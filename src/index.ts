@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-import { userRouter } from "./routes/user";
-import { adminRouter } from "./routes/admin";
-import { courseRouter } from "./routes/course";
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
+import { userRouter } from "./routes/user";
+import { adminRouter } from "./routes/admin";
+import { courseRouter } from "./routes/course";
 
 const app = express()
 app.use(cors()); // Enable CORS for all routes in development
