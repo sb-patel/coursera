@@ -2,6 +2,7 @@ const { Router } = require("express");
 const adminRouter = Router();
 const { adminMiddleware } = require("../app/middleware/adminMiddleware")
 const adminController = require("../app/controllers/adminController")
+const { ObjectId } = require('mongodb'); // Import ObjectId from mongodb package
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
@@ -36,7 +37,7 @@ adminRouter.get("/test/new/user/:userId", async function (req, res) {
         const { userId } = req.params;
         console.log(userId);
         const user = prisma.newUser.findUnique({
-            where: { id: userId },
+            where: { id: new ObjectId(userId) },
         })
         return res.json({
             users: user
