@@ -35,20 +35,26 @@ adminRouter.post("/test/new/user", async function (req, res) {
 adminRouter.get("/test/new/user/:userId", async function (req, res) {
     try {
         const { userId } = req.params;
-        console.log(userId);
-        const user = prisma.newUser.findUnique({
-            where: { id: new ObjectId(userId) },
-        })
-        return res.json({
-            users: user
-        })
+        const user = await prisma.newUser.findFirst({
+            where: {
+                id: userId
+            },
+            select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+            }
+        });
+        res.json({
+            user
+        });
     }
     catch (error) {
         console.error(error.message);
     }
 });
 
-adminRouter.get("/test/new/user/", async function (req, res) {
+adminRouter.get("/test/new/users", async function (req, res) {
     try {
         const users = await prisma.newUser.findMany();
         return res.json({
@@ -59,12 +65,12 @@ adminRouter.get("/test/new/user/", async function (req, res) {
         console.error(error.message);
     }
 });
+
 adminRouter.post("/test/new/user/update/:userId", async function (req, res) {
     try {
         const { userId } = req.params;
-        console.log(userId);
         const user = prisma.newUser.findUnique({
-            where: { _id: userId },
+            where: { id: userId },
         })
         if (!user) {
             return res.status(404).json({
@@ -74,39 +80,55 @@ adminRouter.post("/test/new/user/update/:userId", async function (req, res) {
 
         const { email, password, firstName, lastName } = req.body;
 
-        const udatedUser = prisma.newUser.update({
-            where: { _id: userId },
-            email,
-            password,
-            firstName,
-            lastName,
-        });
+        const data = {
+            email:email,
+            password:password,
+            firstName:firstName,
+            lastName:lastName,
+        };
 
-        return res.json({
-            udatedUser
-        })
+        try{
+            const udatedUser = await prisma.newUser.update({
+                where: { id: userId },
+                data
+            });
+    
+            return res.json({
+                udatedUser
+            })
+        }
+        catch (error) {
+            console.error(error.message);
+        }
     }
     catch (error) {
         console.error(error.message);
     }
 });
+
 adminRouter.post("/test/new/user/delete/:userId", async function (req, res) {
     try {
         const { userId } = req.params;
-        const user = prisma.newUser.findUnique({
-            where: { _id: userId },
-        })
-        if (!user) {
-            return res.status(404).json({
-                message: "no user found !"
+        try{
+            const user = await prisma.newUser.findUnique({
+                where: { id: userId },
+            })
+            if (!user) {
+                return res.status(404).json({
+                    message: "no user found !"
+                })
+            }
+            
+            await prisma.newUser.delete({
+                where: { id: userId },
+            })
+            return res.json({
+                users: []
             })
         }
-        prisma.newUser.delete({
-            where: { _id: userId },
-        })
-        return res.json({
-            users: []
-        })
+        catch (error) {
+            console.error(error.message);
+        }
     }
     catch (error) {
         console.error(error.message);
