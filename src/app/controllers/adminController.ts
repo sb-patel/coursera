@@ -34,6 +34,7 @@ const courseSchema = z.object({
     title: z.string().min(1),
     description: z.string().min(1),
     price: z.number().min(1),
+    subCategoryId: z.string().min(1),
     imageUrl: z.string().min(1)
 });
 
@@ -200,6 +201,7 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
         price: z.string()
             .transform((val) => Number(val)) // Convert string to number
             .refine((val) => !isNaN(val) && val >= 1, { message: "Price must be a number and at least 1" }),
+        subCategoryId: z.string().min(1),
         imageUrl: z.string().min(1)
     });
 
@@ -230,6 +232,7 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
                     title: courseData.title,
                     description: courseData.description,
                     price: courseData.price,
+                    subCategoryId: courseData.subCategoryId,
                     imageUrl: courseData.imageUrl
                 }
             },

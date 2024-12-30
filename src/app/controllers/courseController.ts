@@ -12,7 +12,7 @@ export async function purchase(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        const course: courseDocument | null = await courseModel.findOne({ '_id':courseId});
+        const course: courseDocument | null = await courseModel.findOne({ '_id': courseId });
 
         if (!course) {
             res.status(404).json({
@@ -21,7 +21,7 @@ export async function purchase(req: Request, res: Response): Promise<void> {
             return;
         };
 
-        if(!req.user || !req.user.id){
+        if (!req.user || !req.user.id) {
             res.status(404).json({
                 message: "No user id provided"
             });
@@ -38,7 +38,7 @@ export async function purchase(req: Request, res: Response): Promise<void> {
             message: "Course Purchased successfully !"
         });
     }
-    catch (error:unknown) {
+    catch (error: unknown) {
         res.status(500).json({
             error: error instanceof Error ? error.message : "Unknown error",
             message: "Error during purchasing a course !"
@@ -67,7 +67,7 @@ export async function preview(req: Request, res: Response): Promise<void> {
 
         res.status(200).json({
             message: "Course retrieved successfully !",
-            data : course
+            data: course
         });
     }
     catch (error: unknown) {
@@ -80,19 +80,51 @@ export async function preview(req: Request, res: Response): Promise<void> {
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
-    try{
+    try {
         const courses: courseDocument[] = await courseModel.find();
         res.json({
             message: "Course retrieved successfully !",
-            data : courses
+            data: courses
         });
         return;
     }
-    catch(error: unknown){
+    catch (error: unknown) {
         res.status(500).json({
             error: error instanceof Error ? error.message : "Unknown error",
             message: "Error while fetching courses !"
         })
+        return;
+    }
+}
+
+export async function getSubCategoryCourses(req: Request, res: Response): Promise<void> {
+    try {
+        const { subCategoryId } = req.params;
+
+        if (!Types.ObjectId.isValid(subCategoryId)) {
+            res.status(400).json({ message: 'Invalid SubCategory ID' });
+            return;
+        }
+
+        const courses: courseDocument[] | null = await courseModel.find({ 'subCategoryId': subCategoryId });
+
+        if (!courses) {
+            res.status(404).json({
+                message: "No courses found",
+            });
+            return;
+        };
+
+        res.status(200).json({
+            message: "courses retrieved successfully !",
+            data: courses
+        });
+    }
+    catch (error: unknown) {
+        res.status(500).json({
+            error: error instanceof Error ? error.message : "Unknown error",
+            message: "Error while fetching courses !"
+        });
         return;
     }
 }

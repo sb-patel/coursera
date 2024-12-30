@@ -7,6 +7,7 @@ export interface courseDocument extends Document{
     description: String;
     price: Number;
     imageUrl: String;
+    subCategoryId: mongoose.Types.ObjectId;
     creatorId: mongoose.Types.ObjectId;
 };
 
@@ -15,6 +16,7 @@ const courseSchema: Schema<courseDocument> = new Schema({
     description: String,
     price: Number,
     imageUrl: String,
+    subCategoryId: ObjectId,
     creatorId: ObjectId
 });
 
