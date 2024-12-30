@@ -13,12 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require('dotenv').config();
-const user_1 = require("./routes/user");
-const admin_1 = require("./routes/admin");
-const course_1 = require("./routes/course");
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const user_1 = require("./routes/user");
+const admin_1 = require("./routes/admin");
+const course_1 = require("./routes/course");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)()); // Enable CORS for all routes in development
 app.use(express_1.default.json());
