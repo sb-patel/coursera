@@ -12,17 +12,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.purchases = exports.signIn = exports.signUp = void 0;
+exports.test = exports.purchases = exports.signIn = exports.signUp = void 0;
 const zod_1 = require("zod");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../../config");
 const user_1 = require("../../database/models/user");
 const purchase_1 = require("../../database/models/purchase");
+const category_1 = require("../../database/models/category");
 const signUpSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(6),
-    firstName: zod_1.z.string().min(1),
+    email: zod_1.z.string().email(), // Must be a valid email
+    password: zod_1.z.string().min(6), // Minimum password length of 6 characters
+    firstName: zod_1.z.string().min(1), // First name must not be empty
     lastName: zod_1.z.string().min(1) // Last name must not be empty
 });
 const signInSchema = zod_1.z.object({
@@ -147,3 +148,23 @@ function purchases(req, res) {
     });
 }
 exports.purchases = purchases;
+function test(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const categories = yield category_1.categoryModel.find();
+            res.json({
+                message: "Categories retrieved successfully !",
+                data: categories
+            });
+            return;
+        }
+        catch (error) {
+            res.status(500).json({
+                error: error instanceof Error ? error.message : "Unknown error",
+                message: "Error while fetching categories !"
+            });
+            return;
+        }
+    });
+}
+exports.test = test;

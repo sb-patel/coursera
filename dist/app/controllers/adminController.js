@@ -21,13 +21,13 @@ const config_1 = require("../../config");
 const admin_1 = require("../../database/models/admin");
 const course_1 = require("../../database/models/course");
 const signUpSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(6),
-    firstName: zod_1.z.string().min(1, "First name is required"),
+    email: zod_1.z.string().email(), // Must be a valid email
+    password: zod_1.z.string().min(6), // Minimum password length of 6 characters
+    firstName: zod_1.z.string().min(1, "First name is required"), // First name must not be empty
     lastName: zod_1.z.string().min(1) // Last name must not be empty
 });
 const signInSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
+    email: zod_1.z.string().email(), // Must be a valid email
     password: zod_1.z.string().min(6) // Minimum password length of 6 characters
 });
 const courseSchema = zod_1.z.object({

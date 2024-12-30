@@ -5,8 +5,6 @@ import { Request, Response } from "express";
 import { JWT_USER_PASSWORD } from "../../config";
 import { userModel, UserDocument } from "../../database/models/user";
 import { purchaseModel, purchaseDocument } from "../../database/models/purchase";
-import { categoryModel, CategoryDocument } from "../../database/models/category";
-import { subCategoryModel, SubCategoryDocument } from "../../database/models/subCategory";
 
 
 const signUpSchema = z.object({
@@ -85,7 +83,7 @@ export async function signIn(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        if(!JWT_USER_PASSWORD){
+        if (!JWT_USER_PASSWORD) {
             res.status(400).json({
                 "message": "No encryption key is provided"
             });

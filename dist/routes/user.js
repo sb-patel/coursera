@@ -32,3 +32,4 @@ exports.userRouter = userRouter;
 userRouter.post("/signup", userController.signUp);
 userRouter.post("/signin", userController.signIn);
 userRouter.get("/purchases", authMiddleware_1.authMiddleware, userController.purchases);
+userRouter.get("/test", authMiddleware_1.authMiddleware, userController.test);
