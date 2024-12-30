@@ -5,7 +5,7 @@ export interface SubCategoryDocument extends Document {
     description?: string;
     imageUrl: string,
     categoryId: mongoose.Types.ObjectId;
-    userId: mongoose.Types.ObjectId;
+    creatorId: mongoose.Types.ObjectId;
 }
 
 const subCategorySchema: Schema<SubCategoryDocument> = new Schema({
@@ -13,7 +13,7 @@ const subCategorySchema: Schema<SubCategoryDocument> = new Schema({
     description: String,
     imageUrl: String,
     categoryId: mongoose.Types.ObjectId,
-    userId: mongoose.Types.ObjectId,
+    creatorId: mongoose.Types.ObjectId,
 });
 
 

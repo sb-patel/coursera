@@ -4,14 +4,14 @@ export interface CategoryDocument extends Document {
     name: string;
     description?: string;
     imageUrl: string,
-    userId: mongoose.Types.ObjectId;
+    creatorId: mongoose.Types.ObjectId;
 }
 
 const categorySchema: Schema<CategoryDocument> = new Schema({
     name: { type: String, required: true },
     description: String,
     imageUrl: String,
-    userId: mongoose.Types.ObjectId,
+    creatorId: mongoose.Types.ObjectId,
 });
 
 
