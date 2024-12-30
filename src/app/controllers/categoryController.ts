@@ -33,7 +33,7 @@ export async function view(req: Request, res: Response): Promise<void> {
         const { categoryId } = req.params;
 
         if (!Types.ObjectId.isValid(categoryId)) {
-            res.status(400).json({ message: 'Invalid Course ID' });
+            res.status(400).json({ message: 'Invalid Category ID' });
             return;
         }
 
@@ -148,7 +148,7 @@ export async function update(req: Request, res: Response): Promise<void> {
 
         res.status(500).json({
             error: error instanceof Error ? error.message : "Unknown Error",
-            message: "Error during updating a course !"
+            message: "Error during updating a Category !"
         })
     }
 }
