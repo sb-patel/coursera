@@ -6,6 +6,7 @@ import * as categoryController from "../app/controllers/categoryController"
 
 categoryRouter.get("/", categoryController.index);
 categoryRouter.get("/:categoryId", categoryController.view);
+categoryRouter.get("/:categoryId/subcategories", categoryController.getCategorySubCategory);
 categoryRouter.post("/", authMiddleware, categoryController.add);
 categoryRouter.put("/:categoryId", authMiddleware, categoryController.update);
 categoryRouter.delete("/:categoryId", authMiddleware, categoryController.destroy);

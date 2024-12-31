@@ -7,6 +7,6 @@ courseRouter.post("/purchase/:courseId", authMiddleware, courseController.purcha
 
 courseRouter.get("/preview/:courseId", authMiddleware, courseController.preview);
 
-courseRouter.get("/list", authMiddleware, courseController.list);
+courseRouter.get("/list", courseController.list);
 
 export { courseRouter };

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { SubCategoryDocument, subCategoryModel } from "../../database/models/subCategory";
+import { courseDocument, courseModel } from "../../database/models/course";
 
 const subCategorySchema = z.object({
     name: z.string().min(1),
@@ -183,33 +184,33 @@ export async function destroy(req: Request, res: Response): Promise<void> {
     }
 }
 
-export async function getCategorySubCategory(req: Request, res: Response): Promise<void> {
+export async function getSubCategoryCourses(req: Request, res: Response): Promise<void> {
     try {
-        const { categoryId } = req.params;
+        const { subCategoryId } = req.params;
 
-        if (!Types.ObjectId.isValid(categoryId)) {
+        if (!Types.ObjectId.isValid(subCategoryId)) {
             res.status(400).json({ message: 'Invalid Category ID' });
             return;
         }
 
-        const subCategories: SubCategoryDocument[] | null = await subCategoryModel.find({'categoryId' : categoryId});
+        const courses: courseDocument[] | null = await courseModel.find({'subCategoryId' : subCategoryId});
 
-        if (!subCategories) {
+        if (!courses) {
             res.status(404).json({
-                message: "No sub categories found",
+                message: "No course found",
             });
             return;
         };
 
         res.status(200).json({
-            message: "Sub-Categories retrieved successfully !",
-            data: subCategories
+            message: "Courses retrieved successfully !",
+            data: courses
         });
     }
     catch (error: unknown) {
         res.status(500).json({
             error: error instanceof Error ? error.message : "Unknown error",
-            message: "Error while fetching a sub-categories !"
+            message: "Error while fetching a Courses !"
         });
         return;
     }

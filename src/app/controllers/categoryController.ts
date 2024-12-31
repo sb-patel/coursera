@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { Request, Response } from "express";
 import { CategoryDocument, categoryModel } from "../../database/models/category";
+import { SubCategoryDocument, subCategoryModel } from "../../database/models/subCategory";
 
 const categorySchema = z.object({
     name: z.string().min(1),
@@ -180,5 +181,37 @@ export async function destroy(req: Request, res: Response): Promise<void> {
             error: error instanceof Error ? error.message : "Unknown Error",
             message: "Error during removing a category !"
         })
+    }
+}
+
+export async function getCategorySubCategory(req: Request, res: Response): Promise<void> {
+    try {
+        const { categoryId } = req.params;
+
+        if (!Types.ObjectId.isValid(categoryId)) {
+            res.status(400).json({ message: 'Invalid Category ID' });
+            return;
+        }
+
+        const subCategories: SubCategoryDocument[] | null = await subCategoryModel.find({'categoryId' : categoryId});
+
+        if (!subCategories) {
+            res.status(404).json({
+                message: "No sub categories found",
+            });
+            return;
+        };
+
+        res.status(200).json({
+            message: "Sub-Categories retrieved successfully !",
+            data: subCategories
+        });
+    }
+    catch (error: unknown) {
+        res.status(500).json({
+            error: error instanceof Error ? error.message : "Unknown error",
+            message: "Error while fetching a sub-categories !"
+        });
+        return;
     }
 }
