@@ -9,6 +9,8 @@ adminRouter.post("/signup", adminController.signUp);
 
 adminRouter.post("/signin", adminController.signIn);
 
+adminRouter.post("/logout", adminController.logout);
+
 adminRouter.post("/course", adminMiddleware, adminController.addCourse);
 
 adminRouter.put("/course/:courseId", adminMiddleware, adminController.updateCourse);

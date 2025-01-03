@@ -6,6 +6,7 @@ import { JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response } from "express"
 import { adminModel, AdminDocument } from "../../database/models/admin";
 import { courseModel, courseDocument } from "../../database/models/course";
+import { blacklistedToken } from "../../database/models/blackListedToken.js";
 
 declare global {
     namespace Express {
@@ -113,7 +114,7 @@ export async function signIn(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        if(!JWT_ADMIN_PASSWORD){
+        if (!JWT_ADMIN_PASSWORD) {
             res.status(401).json({
                 "message": "Admin secret not provided"
             });
@@ -206,9 +207,9 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
     });
 
     try {
-        if(!req.user || !req.user.id){
+        if (!req.user || !req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
-            return; 
+            return;
         }
         const courseData = courseUpdateSchema.parse(req.body);
 
@@ -276,7 +277,7 @@ export async function deleteCourse(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        if(!req.user || !req.user.id){
+        if (!req.user || !req.user.id) {
             res.status(403).json({ message: 'User is not Authrorized' });
             return;
         }
@@ -330,6 +331,30 @@ export async function list(req: Request, res: Response): Promise<void> {
             message: "Error while fetching courses !"
         })
         return;
+    }
+}
+
+export async function logout(req: Request, res: Response): Promise<void> {
+    try {
+        const token = req.header("Authorization")?.replace("Bearer ", "");
+        if (!token) {
+            res.status(400).json({ message: "Token not provided" });
+            return;
+        }
+
+        const decoded: any = jwt.decode(token);
+        if (!decoded || !decoded.exp) {
+            res.status(400).json({ message: "Invalid token" });
+            return;
+        }
+
+        const expiresAt = new Date(decoded.exp * 1000);
+
+        await blacklistedToken.create({ token, expiresAt });
+
+        res.status(200).json({ message: "Logged out successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error during logout", error });
     }
 }
 
