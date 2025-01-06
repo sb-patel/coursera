@@ -6,7 +6,7 @@ import { JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response } from "express"
 import { adminModel, AdminDocument } from "../../database/models/admin";
 import { courseModel, courseDocument } from "../../database/models/course";
-import { blacklistedToken } from "../../database/models/blackListedToken.js";
+import { blacklistedToken } from "../../database/models/blackListedToken";
 
 declare global {
     namespace Express {

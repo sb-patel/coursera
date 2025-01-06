@@ -1,12 +1,22 @@
 import jwt from "jsonwebtoken"
 import { Request, Response, NextFunction } from "express";
 import { JWT_USER_PASSWORD, JWT_ADMIN_PASSWORD } from "../../config";
+import { blacklistedToken } from "../../database/models/blackListedToken";
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token) {
         res.status(401).json({ message: "Access denied. No token provided !" });
+        return;
+    }
+
+    const isBlackListed = await blacklistedToken.findOne({token});
+
+    if(isBlackListed){
+        res.status(401).json({
+            message: "Token is blacklisted !"
+        });
         return;
     }
 
