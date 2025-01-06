@@ -93,7 +93,7 @@ export async function signIn(req: Request, res: Response): Promise<void> {
         const token: string = jwt.sign({
             id: user._id,
             role: "user"
-        }, JWT_USER_PASSWORD);
+        }, JWT_USER_PASSWORD, { expiresIn: '1h' });
 
         res.json({
             message: 'Login successful',
