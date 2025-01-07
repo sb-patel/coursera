@@ -7,6 +7,7 @@ import { Request, Response } from "express"
 import { adminModel, AdminDocument } from "../../database/models/admin";
 import { courseModel, courseDocument } from "../../database/models/course";
 import { blacklistedToken } from "../../database/models/blackListedToken";
+import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
 
 declare global {
     namespace Express {
@@ -357,6 +358,44 @@ export async function logout(req: Request, res: Response): Promise<void> {
         res.status(500).json({ message: "Error during logout", error });
     }
 }
+
+export async function addUserDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, profilePic, address, gender, phoneNumber, dateOfBirth } = req.body;
+  
+      // Validate required fields
+      if (!userId || !address || !gender || !phoneNumber) {
+        res.status(400).json({ message: "Missing required fields" });
+        return;
+      }
+  
+      // Check if user details already exist
+      const existingDetails = await userDetailModel.findOne({ userId });
+      if (existingDetails) {
+        res.status(400).json({ message: "User details already exist" });
+        return;
+      }
+  
+      // Create new user details
+      const userDetails = new userDetailModel({
+        userId,
+        profilePic,
+        address,
+        gender,
+        phoneNumber,
+        dateOfBirth,
+      });
+  
+      await userDetails.save();
+  
+      res.status(201).json({ message: "User details added successfully", data: userDetails });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error adding user details",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
 
 // module.exports = {
 //     signUp: signUp,
