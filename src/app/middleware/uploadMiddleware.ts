@@ -1,10 +1,18 @@
 import multer from "multer";
+import fs from "fs";
 import path from "path";
 
 // Set storage engine
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/profile-pics/"); // Folder to save the images
+        const uploadPath = path.join(__dirname, "uploads/profile-pics/");
+
+        // Create the folder if it doesn't exist
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+
+        cb(null, uploadPath); // Folder to save the images
     },
     filename: (req, file, cb) => {
         const uniqueName = `${Date.now()}-${file.originalname}`;
