@@ -20,6 +20,6 @@ adminRouter.delete("/course/:courseId", adminMiddleware, adminController.deleteC
 
 adminRouter.get("/list", adminMiddleware, adminController.list);
 
-adminRouter.post("/user-details", upload.single("profilePic"), adminController.addUserDetails);
+adminRouter.post("/user-details", adminMiddleware, adminController.addUserDetails);
 
 export { adminRouter };

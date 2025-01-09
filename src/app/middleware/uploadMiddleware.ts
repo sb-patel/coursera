@@ -2,39 +2,19 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 
-// Set storage engine
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, "uploads/profile-pics/");
-
-        // Create the folder if it doesn't exist
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-
-        cb(null, uploadPath); // Folder to save the images
+    destination: function (req, file, cb) {
+        cb(null, "uploads/"); // Upload folder
     },
-    filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueName);
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
     },
 });
 
-// File type validation
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error("Only .jpeg, .jpg, and .png files are allowed"));
-    }
-};
-
-// Multer configuration
 const upload = multer({
-    storage,
-    fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for testing
 });
 
 export default upload;

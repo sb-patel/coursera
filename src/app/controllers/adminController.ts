@@ -8,6 +8,9 @@ import { adminModel, AdminDocument } from "../../database/models/admin";
 import { courseModel, courseDocument } from "../../database/models/course";
 import { blacklistedToken } from "../../database/models/blackListedToken";
 import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
+import formidable, { Fields, Files } from 'formidable';
+import path from "path";
+import fs from "fs";
 
 declare global {
     namespace Express {
@@ -360,43 +363,119 @@ export async function logout(req: Request, res: Response): Promise<void> {
 }
 
 export async function addUserDetails(req: Request, res: Response): Promise<void> {
-    try {
-        const { userId, profilePic, address, gender, phoneNumber, dateOfBirth } = req.body;
+    // const { userId, profilePic, address, gender, phoneNumber, dateOfBirth } = req.body;
 
-        // Validate required fields
+    // console.log(req.body);
+
+    // // Validate required fields
+    // if (!userId || !address || !gender || !phoneNumber) {
+    //     res.status(400).json({ message: "Missing required fields" });
+    //     return;
+    // }
+
+    // // Check if user details already exist
+    // const existingDetails = await userDetailModel.findOne({ userId });
+
+    // if (existingDetails) {
+    //     res.status(400).json({ message: "User details already exist" });
+    //     return;
+    // }
+
+    // // Create new user details
+    // const userDetails = new userDetailModel({
+    //     userId,
+    //     profilePic,
+    //     address,
+    //     gender,
+    //     phoneNumber,
+    //     dateOfBirth,
+    // });
+
+    // console.log(userDetails);
+
+    // await userDetails.save();
+
+    const form = formidable({
+        multiples: false, // Allow single file upload (set true for multiple)
+        uploadDir: path.join(__dirname, 'uploads'), // Directory for saving files
+        keepExtensions: true, // Keep file extensions
+        maxFileSize: 5 * 1024 * 1024, // 5MB
+    });
+
+    // Parse the incoming form data
+    form.parse(req, async (err: any, fields: Fields, files: Files) => {
+        console.log(fields);
+        if (err) {
+            console.error('Error parsing form data:', err);
+            return res.status(500).json({ message: 'Error parsing form data' });
+        }
+
+        // Check if 'profilePic' field exists
+        // Extract fields from the parsed form
+        const { userId, address, gender, phoneNumber, dateOfBirth } = fields;
+
+        // 1. Validate required fields
         if (!userId || !address || !gender || !phoneNumber) {
-        res.status(400).json({ message: "Missing required fields" });
-        return;
+            return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        // Check if user details already exist
+        const uploadedFile = files.profilePic ? files.profilePic[0] : null; // Assuming 'profilePic' is the key
+        if (!uploadedFile) {
+            return res.status(400).json({ message: 'Profile picture is required' });
+        }
+
+        // 2. Check if user details already exist
         const existingDetails = await userDetailModel.findOne({ userId });
-
         if (existingDetails) {
-            res.status(400).json({ message: "User details already exist" });
-            return;
+            return res.status(400).json({ message: 'User details already exist' });
         }
-    
-        // Create new user details
-        const userDetails = new userDetailModel({
-            userId,
-            profilePic,
-            address,
-            gender,
-            phoneNumber,
-            dateOfBirth,
-        });
-    
-        await userDetails.save();
 
-        res.status(201).json({ message: "User details added successfully", data: userDetails });
-    }
-    catch (error) {
-      res.status(500).json({
-        message: "Error adding user details",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+        // Move the file to the desired location
+        const originalFilename = uploadedFile.originalFilename || uploadedFile.newFilename || 'unknown_file';
+
+        const newFilePath = path.join(__dirname, 'uploads', originalFilename);
+        fs.rename(uploadedFile.filepath, newFilePath, async (renameErr) => {
+            if (renameErr) {
+                console.error('Error moving file:', renameErr);
+                return res.status(500).json({ message: 'Error saving file' });
+            }
+
+            // Create user details object from fields
+            const userDetails = {
+                userId: fields.userId ? fields.userId[0] : '', // Make sure userId is sent in the form-data
+                profilePic: originalFilename, // Save the file name or path
+                address: fields.address ? fields.address[0] : '',
+                gender: fields.gender ? fields.gender[0] : '',
+                phoneNumber: fields.phoneNumber ? fields.phoneNumber[0] : '',
+                dateOfBirth: fields.dateOfBirth ? fields.dateOfBirth[0] : '',
+                // dateOfBirth: fields.dateOfBirth ? new Date(fields.dateOfBirth) : undefined,
+            };
+
+            try {
+                // Save user details to the database
+                const newUserDetails = new userDetailModel(userDetails);
+                await newUserDetails.save();
+
+                // Send response with success message
+                res.json({
+                    message: 'File uploaded and user details added successfully!',
+                    fileName: uploadedFile.originalFilename,
+                    filePath: newFilePath,
+                    userDetails: newUserDetails,
+                });
+            } catch (dbErr) {
+                console.error('Error saving to database:', dbErr);
+                res.status(500).json({ message: 'Error saving user details to database' });
+            }
+        });
+    });
+
+    // Optional: Handle file upload events (for debugging or custom processing)
+    form.on('file', (name: string, file: formidable.File) => {
+        console.log(`Uploaded file [${name}]:`, file.originalFilename);
+    });
+
+    console.log('last')
 }
 
 // module.exports = {
