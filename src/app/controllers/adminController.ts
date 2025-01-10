@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -9,8 +11,7 @@ import { courseModel, courseDocument } from "../../database/models/course";
 import { blacklistedToken } from "../../database/models/blackListedToken";
 import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
 import formidable, { Fields, Files } from 'formidable';
-import path from "path";
-import fs from "fs";
+import upload from "../middleware/uploadMiddleware";
 
 declare global {
     namespace Express {
@@ -46,6 +47,20 @@ const courseSchema = z.object({
 // Define the TypeScript type for the request body based on the Zod schema
 type SignUpData = z.infer<typeof signUpSchema>;
 type SignInData = z.infer<typeof signInSchema>;
+
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+
+// Ensure the upload directory exists
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+// Set up Multer storage
+const COURSE_UPLOAD_DIR = path.join(__dirname, "../uploads/courses");
+
+if (!fs.existsSync(COURSE_UPLOAD_DIR)) {
+    fs.mkdirSync(COURSE_UPLOAD_DIR, { recursive: true });
+}
 
 export async function signUp(req: Request, res: Response): Promise<void> {
     try {
@@ -156,6 +171,9 @@ export async function signIn(req: Request, res: Response): Promise<void> {
 }
 
 export async function addCourse(req: Request, res: Response): Promise<void> {
+    console.log(COURSE_UPLOAD_DIR);
+    upload.single("coursePic");
+
     try {
         if (!req.user || !req.user.id) {
             res.status(401).json({ message: "Unauthorized: User ID is missing" });
@@ -363,54 +381,19 @@ export async function logout(req: Request, res: Response): Promise<void> {
 }
 
 export async function addUserDetails(req: Request, res: Response): Promise<void> {
-    // const { userId, profilePic, address, gender, phoneNumber, dateOfBirth } = req.body;
-
-    // console.log(req.body);
-
-    // // Validate required fields
-    // if (!userId || !address || !gender || !phoneNumber) {
-    //     res.status(400).json({ message: "Missing required fields" });
-    //     return;
-    // }
-
-    // // Check if user details already exist
-    // const existingDetails = await userDetailModel.findOne({ userId });
-
-    // if (existingDetails) {
-    //     res.status(400).json({ message: "User details already exist" });
-    //     return;
-    // }
-
-    // // Create new user details
-    // const userDetails = new userDetailModel({
-    //     userId,
-    //     profilePic,
-    //     address,
-    //     gender,
-    //     phoneNumber,
-    //     dateOfBirth,
-    // });
-
-    // console.log(userDetails);
-
-    // await userDetails.save();
-
     const form = formidable({
         multiples: false, // Allow single file upload (set true for multiple)
-        uploadDir: path.join(__dirname, 'uploads'), // Directory for saving files
+        uploadDir: UPLOAD_DIR, // Directory for saving files
         keepExtensions: true, // Keep file extensions
         maxFileSize: 5 * 1024 * 1024, // 5MB
     });
 
     // Parse the incoming form data
     form.parse(req, async (err: any, fields: Fields, files: Files) => {
-        console.log(fields);
         if (err) {
-            console.error('Error parsing form data:', err);
-            return res.status(500).json({ message: 'Error parsing form data' });
+            return res.status(500).json({ message: `Error parsing form data - ${err}` });
         }
 
-        // Check if 'profilePic' field exists
         // Extract fields from the parsed form
         const { userId, address, gender, phoneNumber, dateOfBirth } = fields;
 
@@ -425,7 +408,7 @@ export async function addUserDetails(req: Request, res: Response): Promise<void>
         }
 
         // 2. Check if user details already exist
-        const existingDetails = await userDetailModel.findOne({ userId });
+        const existingDetails: UserDetailsDocument | null = await userDetailModel.findOne({ userId });
         if (existingDetails) {
             return res.status(400).json({ message: 'User details already exist' });
         }
@@ -447,8 +430,8 @@ export async function addUserDetails(req: Request, res: Response): Promise<void>
                 address: fields.address ? fields.address[0] : '',
                 gender: fields.gender ? fields.gender[0] : '',
                 phoneNumber: fields.phoneNumber ? fields.phoneNumber[0] : '',
-                dateOfBirth: fields.dateOfBirth ? fields.dateOfBirth[0] : '',
-                // dateOfBirth: fields.dateOfBirth ? new Date(fields.dateOfBirth) : undefined,
+                // dateOfBirth: fields.dateOfBirth ? fields.dateOfBirth[0] : '',
+                dateOfBirth: fields.dateOfBirth ? new Date(fields.dateOfBirth[0]) : undefined,
             };
 
             try {
@@ -474,8 +457,6 @@ export async function addUserDetails(req: Request, res: Response): Promise<void>
     form.on('file', (name: string, file: formidable.File) => {
         console.log(`Uploaded file [${name}]:`, file.originalFilename);
     });
-
-    console.log('last')
 }
 
 // module.exports = {
