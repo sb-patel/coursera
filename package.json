@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@prisma/client": "^6.0.1",
     "@types/formidable": "^3.4.5",
     "bcrypt": "^5.1.1",

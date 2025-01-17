@@ -12,6 +12,7 @@ import { blacklistedToken } from "../../database/models/blackListedToken";
 import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
 import formidable, { Fields, Files } from 'formidable';
 import upload from "../middleware/uploadMiddleware";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 declare global {
     namespace Express {
@@ -115,6 +116,15 @@ export async function signUp(req: Request, res: Response): Promise<void> {
 
 export async function signIn(req: Request, res: Response): Promise<void> {
     try {
+        const genAI = new GoogleGenerativeAI("GEMINI_API_KEY");
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = "Explain how AI works";
+
+        const result = await model.generateContent(prompt);
+        console.log(result.response.text());
+
         const signData: SignInData = signInSchema.parse(req.body);
 
         const admin: AdminDocument | null = await adminModel.findOne({ email: signData.email });
