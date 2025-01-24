@@ -4,15 +4,15 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
-import { JWT_ADMIN_PASSWORD } from "../../config";
 import { Request, Response } from "express"
-import { adminModel, AdminDocument } from "../../database/models/admin";
-import { courseModel, courseDocument } from "../../database/models/course";
-import { blacklistedToken } from "../../database/models/blackListedToken";
-import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
-import formidable, { Fields, Files } from 'formidable';
+import { JWT_ADMIN_PASSWORD } from "../../config";
 import upload from "../middleware/uploadMiddleware";
+import formidable, { Fields, Files } from 'formidable';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { adminModel, AdminDocument } from "../../database/models/admin";
+import { blacklistedToken } from "../../database/models/blackListedToken";
+import { courseModel, courseDocument } from "../../database/models/course";
+import { userDetailModel, UserDetailsDocument } from "../../database/models/userDetail";
 
 declare global {
     namespace Express {

@@ -15,7 +15,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
     if(isBlackListed){
         res.status(401).json({
-            message: "Token is blacklisted !"
+            message: "User is already logged out !"
         });
         return;
     }
